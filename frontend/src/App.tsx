@@ -3,19 +3,22 @@ import SignInPage from './pages/SignInPage'
 import SignUpPage from './pages/SignUpPage'
 import ChatAppPage from './pages/ChatAppPage'
 import { Toaster } from 'sonner'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 
 function App() {
   return (
     <>
-    <Toaster richColors />
+      <Toaster richColors />
       <BrowserRouter>
         <Routes>
           // public routes
-        <Route path="/sign-in" element={<SignInPage />} />
-        <Route path="/sign-up" element={<SignUpPage />} />
+          <Route path="/sign-in" element={<SignInPage />} />
+          <Route path="/sign-up" element={<SignUpPage />} />
 
           // protected routes
-          <Route path="/" element={<ChatAppPage />} />
+          <Route element={<ProtectedRoute/>}>
+            <Route path="/" element={<ChatAppPage />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </>
