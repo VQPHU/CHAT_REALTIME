@@ -15,7 +15,7 @@ function App() {
         <Route path="/sign-up" element={<SignUpPage />} />
 
           // protected routes
-          <Route path="/chat" element={<ChatAppPage />} />
+          <Route path="/" element={<ChatAppPage />} />
         </Routes>
       </BrowserRouter>
     </>
