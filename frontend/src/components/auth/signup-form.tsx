@@ -6,6 +6,8 @@ import { Label } from "../ui/label"
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod' // zodResolver giúp zod kết nối vs useForm
+import { useAuthStore } from "@/store/useAuthStore"
+import { useNavigate } from "react-router"
 
 const signUpSchema = z.object({
   firstname: z.string().min(1, 'tên bắt buộc phải có'),
@@ -21,13 +23,17 @@ export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-
+  const {signUp} = useAuthStore();
+  const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema)
   });
 
   const onSubmit = async (data: SignUpFormValues) => {
+    const {firstname, lastname, username, email, password} = data;
     // gọi backend về signup
+    await signUp(username, password, email, firstname, lastname);
+    navigate("/sign-in");
   }
 
   return (
