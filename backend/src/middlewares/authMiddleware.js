@@ -2,48 +2,39 @@ import jwt from 'jsonwebtoken';
 import User from '../models/Users.js';
 
 // authentication - xác minh user là ai
-export const protectedRoute = async (req, res, next) => {
-    try {
-        // lấy token từ header
-        const authHeader = req.headers.authorization;
-        const token = authHeader && authHeader.split(' ')[1];
+export const protectedRoute = (req, res, next) => {
+  try {
+    // lấy token từ header
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1]; // Bearer <token>
 
-        if (!token) {
-            return res.status(401).json({
-                message: "không có token"
-            });
-        }
-
-        // xác nhận token có hợp lệ hay không
-        const decoded = jwt.verify(
-            token,
-            process.env.ACCESS_TOKEN_SECRET
-        );
-
-        // tìm user
-        const user = await User
-            .findById(decoded.userId)
-            .select('-hashedPassword');
-
-        if (!user) {
-            return res.status(404).json({
-                message: "không tìm thấy user"
-            });
-        }
-
-        // trả user về trong req
-        req.user = user;
-
-        next();
-
-    } catch (error) {
-        console.error(
-            'lỗi khi xác minh JWT trong authMiddleware',
-            error
-        );
-
-        return res.status(500).json({
-            message: "lỗi khi xác minh"
-        });
+    if (!token) {
+      return res.status(401).json({ message: "Không tìm thấy access token" });
     }
+
+    // xác nhận token hợp lệ
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decodedUser) => {
+      if (err) {
+        console.error(err);
+
+        return res
+          .status(403)
+          .json({ message: "Access token hết hạn hoặc không đúng" });
+      }
+
+      // tìm user
+      const user = await User.findById(decodedUser.userId).select("-hashedPassword");
+
+      if (!user) {
+        return res.status(404).json({ message: "người dùng không tồn tại." });
+      }
+
+      // trả user về trong req
+      req.user = user;
+      next();
+    });
+  } catch (error) {
+    console.error("Lỗi khi xác minh JWT trong authMiddleware", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
 };
