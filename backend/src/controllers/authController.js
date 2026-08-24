@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import cypto from "crypto";
 import { Session } from "../models/Session.js";
 
-const ACCESS_TOKEN_TTL = '30m';
+const ACCESS_TOKEN_TTL = '5s';
 const REFRESH_TOKEN_TTL = 14 * 24 * 60 * 60 * 1000; // 14 days 
 
 export const signUp = async (req, res) => {
@@ -109,5 +109,40 @@ export const signOut = async (req, res) => {
     } catch (error) {
         console.error('lỗi khi đăng xuất', error);
         res.status(500).json({ message: "lỗi khi đăng xuất" });
+    }
+}
+
+// tạo access token mới từ refresh token 
+export const refreshToken = async (req, res) => {
+    try {
+        // lấy refreshToken từ cookie
+        const token = req.cookies?.refreshToken;
+        if (!token) {
+            return res.status(401).json({ message: "Token không tồn tại" });
+        }
+
+        // so sánh với refresh token trong database
+        const session = await Session.findOne({ refreshToken: token });
+
+        if (!session) {
+            return res.status(403).json({ message: "token không hợp lệ hoặc đã hết hạn" });
+        }
+
+        // kiểm tra xem token hết hạn chưa 
+        if (session.expiresAt < new Date()) {
+            return res.status(403).json({ message: "Token đã hết hạn." });
+        }
+
+        // tạo access token mới 
+        const accessToken = jwt.sign({
+            userId: session.userId
+        }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_TTL });
+
+        // return access token mới 
+        return res.status(200).json({ accessToken });
+
+    } catch (error) {
+        console.log('Lỗi khi gọi refreshToken');
+        return res.status(500).json({ message: "Lỗi hệ thống" })
     }
 }
